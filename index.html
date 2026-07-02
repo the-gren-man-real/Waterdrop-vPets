@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Water Drop Pets</title>
+<style>
+  body {
+    background:#0f172a;
+    color:white;
+    font-family:system-ui;
+    margin:0;
+    padding:20px;
+  }
+
+  h1 { text-align:center; }
+
+  .section {
+    background:#1e293b;
+    padding:16px;
+    border-radius:12px;
+    margin-bottom:20px;
+  }
+
+  .drop {
+    width:90px;
+    height:120px;
+    border-radius:50% 50% 60% 60%;
+    background:#38bdf8;
+    position:relative;
+    box-shadow:0 0 20px #38bdf8aa;
+    transition:0.2s;
+    animation:bounce 1.4s infinite ease-in-out;
+  }
+
+  @keyframes bounce {
+    0%,100% { transform:translateY(0); }
+    50% { transform:translateY(-10px); }
+  }
+
+  .pet-card {
+    background:#0f1a2f;
+    padding:12px;
+    border-radius:10px;
+    margin:10px 0;
+    cursor:pointer;
+  }
+
+  .row { display:flex; gap:10px; align-items:center; }
+  input[type="text"], input[type="color"] {
+    padding:6px;
+    border-radius:8px;
+    border:none;
+  }
+
+  button {
+    background:#38bdf8;
+    border:none;
+    padding:8px 12px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+  }
+
+  #raceTrack {
+    margin-top:20px;
+    height:500px;
+    position:relative;
+    overflow:hidden;
+    background:#0a1122;
+    border-radius:12px;
+  }
+
+  .raceDrop {
+    width:60px;
+    height:80px;
+    border-radius:50% 50% 60% 60%;
+    position:absolute;
+  }
+</style>
+</head>
+<body>
+
+<h1>💧 Water Drop Pets</h1>
+
+<!-- PET CREATOR -->
+<div class="section">
+  <h2>Create New Pet</h2>
+  <div class="row">
+    <input id="newName" type="text" placeholder="Pet name">
+    <input id="newColor" type="color" value="#38bdf8">
+    <button onclick="createPet()">Create</button>
+  </div>
+</div>
+
+<!-- PET LIST -->
+<div class="section">
+  <h2>Your Pets</h2>
+  <div id="petList"></div>
+</div>
+
+<!-- PET ACTION PANEL -->
+<div class="section" id="petPanel" style="display:none;">
+  <h2 id="petTitle"></h2>
+  <div class="drop" id="activeDrop"></div>
+
+  <p id="moodText">Mood: Happy</p>
+
+  <div class="row">
+    <button onclick="feedPet()">Feed</button>
+    <button onclick="playPet()">Play</button>
+    <button onclick="adventurePet()">Adventure</button>
+    <button onclick="racePet()">Race</button>
+  </div>
+</div>
+
+<!-- RACE AREA -->
+<div id="raceTrack" style="display:none;"></div>
+
+<script>
+let pets = JSON.parse(localStorage.getItem("waterPets") || "[]");
+let activePet = null;
+
+// Save pets
+function savePets() {
+  localStorage.setItem("waterPets", JSON.stringify(pets));
+}
+
+// Create pet
+function createPet() {
+  const name = document.getElementById("newName").value.trim() || "Droplet";
+  const color = document.getElementById("newColor").value;
+
+  pets.push({
+    id: Date.now(),
+    name,
+    color,
+    mood: "Happy"
+  });
+
+  savePets();
+  loadPets();
+}
+
+// Load pet list
+function loadPets() {
+  const list = document.getElementById("petList");
+  list.innerHTML = "";
+
+  pets.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "pet-card";
+    card.innerHTML = `<strong>${p.name}</strong> — Mood: ${p.mood}`;
+    card.onclick = () => openPet(p.id);
+    list.appendChild(card);
+  });
+}
+
+loadPets();
+
+// Open pet panel
+function openPet(id) {
+  activePet = pets.find(p => p.id === id);
+
+  document.getElementById("petPanel").style.display = "block";
+  document.getElementById("petTitle").textContent = activePet.name;
+
+  const drop = document.getElementById("activeDrop");
+  drop.style.background = activePet.color;
+  drop.style.boxShadow = `0 0 20px ${activePet.color}aa`;
+
+  document.getElementById("moodText").textContent = "Mood: " + activePet.mood;
+}
+
+// Actions
+function updateMood(newMood) {
+  activePet.mood = newMood;
+  document.getElementById("moodText").textContent = "Mood: " + newMood;
+  savePets();
+}
+
+function feedPet() {
+  updateMood("Refreshed");
+}
+
+function playPet() {
+  updateMood("Excited");
+}
+
+function adventurePet() {
+  updateMood("Brave");
+}
+
+// RACE WITH ENEMIES
+function racePet() {
+  const track = document.getElementById("raceTrack");
+  track.style.display = "block";
+  track.innerHTML = "";
+
+  // Number of enemies
+  const enemyCount = Math.floor(Math.random() * 3) + 3; // 3–6 enemies
+
+  // Create racers array (your pet + enemies)
+  const racers = [];
+
+  // Your pet racer
+  racers.push({
+    name: activePet.name,
+    color: activePet.color,
+    speed: Math.random() * 2 + 4, // 4–6 speed
+    element: null,
+    x: 0
+  });
+
+  // Enemy racers
+  const personalities = ["Aggressive", "Turbo", "Chill", "Sneaky", "Hyper", "Calm"];
+  for (let i = 0; i < enemyCount; i++) {
+    racers.push({
+      name: "Enemy " + (i + 1),
+      color: "#" + Math.floor(Math.random()*16777215).toString(16),
+      speed: Math.random() * 3 + 3, // 3–6 speed
+      personality: personalities[Math.floor(Math.random() * personalities.length)],
+      element: null,
+      x: 0
+    });
+  }
+
+  // Create racer elements
+  racers.forEach((racer, index) => {
+    const div = document.createElement("div");
+    div.className = "raceDrop";
+    div.style.background = racer.color;
+    div.style.boxShadow = `0 0 20px ${racer.color}aa`;
+    div.style.top = (20 + index * 90) + "px";
+    div.style.left = "0px";
+    racer.element = div;
+    track.appendChild(div);
+  });
+
+  // Race loop
+  const finish = track.offsetWidth - 80;
+  let winner = null;
+
+  const interval = setInterval(() => {
+    racers.forEach(racer => {
+      racer.x += racer.speed;
+      racer.element.style.left = racer.x + "px";
+
+      if (!winner && racer.x >= finish) {
+        winner = racer;
+      }
+    });
+
+    if (winner) {
+      clearInterval(interval);
+
+      if (winner.name === activePet.name) {
+        updateMood("Champion");
+      } else {
+        updateMood("Determined");
+      }
+
+      alert(winner.name + " wins the race!");
+    }
+  }, 50);
+}
+</script>
+
+</body>
+</html>
